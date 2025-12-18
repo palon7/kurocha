@@ -1,7 +1,6 @@
 import {
   type ChatInputCommandInteraction,
   type Client,
-  Collection,
   REST,
   Routes,
 } from "discord.js";
@@ -10,11 +9,7 @@ import { workspaceCommand } from "./workspace.js";
 import { logError, logInfo } from "../../../logger.js";
 
 const commands: SlashCommand[] = [workspaceCommand];
-
-const commandCollection = new Collection<string, SlashCommand>();
-for (const command of commands) {
-  commandCollection.set(command.data.name, command);
-}
+const commandNameToCommand: Map<string, SlashCommand> = new Map(commands.map((cmd) => [cmd.data.name, cmd]));
 
 export async function registerCommands(
   client: Client,
@@ -23,10 +18,12 @@ export async function registerCommands(
   if (!client.user) {
     throw new Error("Client user is not available");
   }
+  if (!client.token) {
+    throw new Error("Client token is not available");
+  }
 
-  const rest = new REST().setToken(client.token!);
+  const rest = new REST().setToken(client.token);
   const commandData = commands.map((cmd) => cmd.data.toJSON());
-
   logInfo(`Registering ${commands.length} slash command(s)...`);
 
   await rest.put(Routes.applicationGuildCommands(client.user.id, guildId), {
@@ -39,7 +36,7 @@ export async function registerCommands(
 export async function handleCommandInteraction(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
-  const command = commandCollection.get(interaction.commandName);
+  const command = commandNameToCommand.get(interaction.commandName);
 
   if (!command) {
     logError(`Unknown command: ${interaction.commandName}`);

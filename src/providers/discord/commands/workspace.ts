@@ -3,25 +3,37 @@ import type { SlashCommand } from "./types.js";
 import { WorkspaceManager } from "../../../workspace/index.js";
 import { logError } from "../../../logger.js";
 
+const handlers = {
+  current: handleCurrent,
+  list: handleList,
+  create: handleCreate,
+  switch: handleSwitch,
+} as const;
+
+
+type HandlerContext = {
+  interaction: ChatInputCommandInteraction;
+  workspaceManager: WorkspaceManager;
+};
+
 async function handleCurrent(
-  interaction: ChatInputCommandInteraction,
+  ctx: HandlerContext,
 ): Promise<void> {
-  const workspaceManager = WorkspaceManager.getInstance();
+  const workspaceManager = ctx.workspaceManager;
   const current = workspaceManager.getCurrentWorkspace();
-  await interaction.reply(
-    `**Current workspace:** \`${current.name}\`\nPath: ${current.path}`,
+  await ctx.interaction.reply(
+    `**Current workspace:** \`${current.name}`,
   );
 }
 
 async function handleList(
-  interaction: ChatInputCommandInteraction,
+  ctx: HandlerContext,
 ): Promise<void> {
-  const workspaceManager = WorkspaceManager.getInstance();
-  const workspaces = await workspaceManager.listWorkspaces();
-  const current = workspaceManager.getCurrentWorkspace();
+  const workspaces = await ctx.workspaceManager.listWorkspaces();
+  const current = ctx.workspaceManager.getCurrentWorkspace();
 
   if (workspaces.length === 0) {
-    await interaction.reply("No workspaces available.");
+    await ctx.interaction.reply("No workspaces available.");
     return;
   }
 
@@ -29,51 +41,48 @@ async function handleList(
     .map((ws) => {
       const isCurrent = ws.name === current.name;
       const marker = isCurrent ? "**→**" : "  ";
-      return `${marker} \`${ws.name}\` - ${ws.path}`;
+      return `${marker} \`${ws.name}\``;
     })
     .join("\n");
 
-  await interaction.reply(`**Workspaces:**\n${list}`);
+  await ctx.interaction.reply(`**Workspaces:**\n${list}`);
 }
 
 async function handleCreate(
-  interaction: ChatInputCommandInteraction,
+  ctx: HandlerContext,
 ): Promise<void> {
-  const name = interaction.options.getString("name", true);
-  const workspaceManager = WorkspaceManager.getInstance();
+  const name = ctx.interaction.options.getString("name", true);
 
-  const workspace = await workspaceManager.createWorkspace(name);
-  await workspaceManager.switchWorkspace(name);
+  const workspace = await ctx.workspaceManager.createWorkspace(name, true);
 
-  await interaction.reply(
-    `✅ Created and switched workspace \`${workspace.name}\`\nPath: ${workspace.path}`,
+  await ctx.interaction.reply(
+    `✅ Created and switched workspace \`${workspace.name}\``,
   );
 }
 
 async function handleSwitch(
-  interaction: ChatInputCommandInteraction,
+  ctx: HandlerContext,
 ): Promise<void> {
-  const name = interaction.options.getString("name", true);
-  const workspaceManager = WorkspaceManager.getInstance();
+  const name = ctx.interaction.options.getString("name", true);
 
-  const workspace = await workspaceManager.switchWorkspace(name);
-
-  await interaction.reply(
-    `✅ Switched to workspace \`${workspace.name}\`\nPath: ${workspace.path}`,
+  const workspace = await ctx.workspaceManager.switchWorkspace(name);
+  await ctx.interaction.reply(
+    `✅ Switched to workspace \`${workspace.name}\``,
   );
 }
 
-export const workspaceCommand: SlashCommand = {
-  data: new SlashCommandBuilder()
+function buildSubcommand(): SlashCommandBuilder {
+  const builder = new SlashCommandBuilder()
     .setName("workspace")
     .setDescription("Manage workspaces")
-    .addSubcommand((sub) =>
+
+  builder.addSubcommand((sub) =>
       sub.setName("current").setDescription("Show current workspace"),
     )
-    .addSubcommand((sub) =>
+  builder.addSubcommand((sub) =>
       sub.setName("list").setDescription("List all workspaces"),
     )
-    .addSubcommand((sub) =>
+  builder.addSubcommand((sub) =>
       sub
         .setName("create")
         .setDescription("Create a new workspace")
@@ -84,7 +93,7 @@ export const workspaceCommand: SlashCommand = {
             .setRequired(true),
         ),
     )
-    .addSubcommand((sub) =>
+  builder.addSubcommand((sub) =>
       sub
         .setName("switch")
         .setDescription("Switch to a workspace")
@@ -94,47 +103,26 @@ export const workspaceCommand: SlashCommand = {
             .setDescription("Workspace name")
             .setRequired(true),
         ),
-    ),
+    )
 
+  return builder;
+}
+
+export const workspaceCommand: SlashCommand = {
+  data: buildSubcommand(),
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
-    const subcommand = interaction.options.getSubcommand();
-
-    try {
-      switch (subcommand) {
-        case "current":
-          await handleCurrent(interaction);
-          break;
-        case "list":
-          await handleList(interaction);
-          break;
-        case "create":
-          await handleCreate(interaction);
-          break;
-        case "switch":
-          await handleSwitch(interaction);
-          break;
-        default:
-          await interaction.reply({
-            content: `Unknown subcommand: ${subcommand}`,
-            ephemeral: true,
-          });
-      }
-    } catch (error) {
-      logError(`Error handling workspace command: ${error}`);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred.";
-
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({
-          content: `❌ Error: ${errorMessage}`,
-          ephemeral: true,
-        });
-      } else {
-        await interaction.reply({
-          content: `❌ Error: ${errorMessage}`,
-          ephemeral: true,
-        });
-      }
+    const subcommand = interaction.options.getSubcommand() as keyof typeof handlers;
+    const handler = handlers[subcommand];
+    const context = {
+      interaction,
+      workspaceManager: WorkspaceManager.getInstance(),
     }
+
+    if (!handler) {
+      logError(`No handler found for subcommand: ${subcommand}`);
+      return;
+    }
+
+    await handler(context);
   },
 };

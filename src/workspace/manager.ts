@@ -121,7 +121,7 @@ export class WorkspaceManager extends EventEmitter {
     }
   }
 
-  async createWorkspace(name: string): Promise<Workspace> {
+  async createWorkspace(name: string, switchTo: boolean = false): Promise<Workspace> {
     this.validateWorkspaceName(name);
 
     const workspacePath = path.join(this.rootDirectory, name);
@@ -144,6 +144,10 @@ export class WorkspaceManager extends EventEmitter {
       name,
       path: workspacePath,
     };
+
+    if (switchTo) {
+      await this.switchWorkspace(name);
+    }
 
     return workspace;
   }
