@@ -1,0 +1,15 @@
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/javascript-node:24
+    dns_opt:
+      - "single-request"
+    volumes:
+      - ../:/workspace:cached
+      - claude-config:/home/node/.claude
+      - dot-config:/home/node/.config
+    command: sleep infinity
+    environment:
+      - MCP_CHAT_HUMAN_ENTRYPOINT=/opt/mcp-chat-human/build/index.js
+volumes:
+  claude-config:
+  dot-config:

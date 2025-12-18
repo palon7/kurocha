@@ -1,0 +1,39 @@
+{
+  "name": "kurocha",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "clean": "rm -rf build",
+    "start": "tsx src/index.ts",
+    "watch": "tsc --watch",
+    "dev": "tsx watch src/index.ts",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "keywords": [],
+  "author": "Ryota Uno <palon7@gmail.com> (https://github.com/palon7)",
+  "license": "MIT",
+  "description": "Start claude code from chat.",
+  "packageManager": "pnpm@10.25.0",
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.67",
+    "@eslint/js": "^9.39.1",
+    "discord.js": "^14.25.1",
+    "es-toolkit": "^1.43.0",
+    "eslint": "^9.39.1",
+    "typescript-eslint": "^8.49.0",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.1",
+    "dotenv": "^17.2.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
+  }
+}

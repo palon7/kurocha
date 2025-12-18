@@ -1,0 +1,39 @@
+services:
+  kurocha:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kurocha
+    restart: unless-stopped
+    environment:
+      # Discord configuration
+      - DISCORD_API_KEY=${DISCORD_API_KEY}
+      - DISCORD_CHANNEL_ID=${DISCORD_CHANNEL_ID}
+      # Claude configuration
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - CLAUDE_WORKING_DIR=/workdir
+      - CLAUDE_SKIP_PERMISSIONS=true
+      # MCP Chat Human entrypoint (defaults to /opt/mcp-chat-human/build/index.js if not set)
+      - MCP_CHAT_HUMAN_ENTRYPOINT=${MCP_CHAT_HUMAN_ENTRYPOINT:-/opt/mcp-chat-human/build/index.js}
+    volumes:
+      # Mount working directory for Claude CLI operations
+      - ./workdir:/workdir
+      # Mount Claude config directory for persistent authentication and settings
+      # This directory stores .credentials.json and other Claude CLI configuration
+      - claude-config:/home/claude/.claude
+      # Optional: Mount custom MCP Chat Human script (if you want to override the built-in one)
+      # - ./mcp-chat-human:/opt/mcp-chat-human:ro
+    security_opt:
+      - no-new-privileges:true
+    # Resource limits (adjust as needed)
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 512M
+
+# Named volumes for persistent data
+volumes:
+  claude-config:
+    driver: local

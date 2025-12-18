@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Build output
+build/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Claude Code settings
+.claude/
+
+# Working directory
+workdir/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Documentation
+*.md
+!README.md
+
+# Docker files (no need to include in context)
+Dockerfile
+docker-compose*.yml
