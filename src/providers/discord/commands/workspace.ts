@@ -22,7 +22,7 @@ async function handleCurrent(
   const workspaceManager = ctx.workspaceManager;
   const current = workspaceManager.getCurrentWorkspace();
   await ctx.interaction.reply(
-    `**Current workspace:** \`${current.name}`,
+    `**Current workspace:** \`${current.name}\``,
   );
 }
 
@@ -74,14 +74,14 @@ async function handleSwitch(
 function buildSubcommand(): SlashCommandBuilder {
   const builder = new SlashCommandBuilder()
     .setName("workspace")
-    .setDescription("Manage workspaces")
+    .setDescription("Manage workspaces");
 
   builder.addSubcommand((sub) =>
       sub.setName("current").setDescription("Show current workspace"),
-    )
+    );
   builder.addSubcommand((sub) =>
       sub.setName("list").setDescription("List all workspaces"),
-    )
+    );
   builder.addSubcommand((sub) =>
       sub
         .setName("create")
@@ -92,7 +92,7 @@ function buildSubcommand(): SlashCommandBuilder {
             .setDescription("Workspace name")
             .setRequired(true),
         ),
-    )
+    );
   builder.addSubcommand((sub) =>
       sub
         .setName("switch")
@@ -103,7 +103,7 @@ function buildSubcommand(): SlashCommandBuilder {
             .setDescription("Workspace name")
             .setRequired(true),
         ),
-    )
+    );
 
   return builder;
 }
@@ -116,7 +116,7 @@ export const workspaceCommand: SlashCommand = {
     const context = {
       interaction,
       workspaceManager: WorkspaceManager.getInstance(),
-    }
+    };
 
     if (!handler) {
       logError(`No handler found for subcommand: ${subcommand}`);
