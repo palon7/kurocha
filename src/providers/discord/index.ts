@@ -15,10 +15,13 @@ import {
 } from "../errors.js";
 import type { DiscordConfig } from "./config.js";
 import { type ClaudeCode, SessionBusyError } from "../../claude/index.js";
-import { handleWorkspaceCommand } from "../../workspace/commands.js";
 import { createEmbedMessage } from "./util.js";
 import { DiscordSession } from "../../session/discord.js";
 import { logDebug, logError, logFailure, logWarn } from "../../logger.js";
+import {
+  registerCommands,
+  handleCommandInteraction,
+} from "./commands/index.js";
 
 export class DiscordProvider {
   readonly name = "discord";
@@ -52,13 +55,19 @@ export class DiscordProvider {
         }
       });
 
-      // Register button interaction listener
+      // Register interaction listener
       this.client.on(Events.InteractionCreate, async (interaction) => {
         if (interaction.isButton()) {
           try {
             await this.handleButtonInteraction(interaction);
           } catch (error) {
             logError(`Error handling button interaction: ${error}`);
+          }
+        } else if (interaction.isChatInputCommand()) {
+          try {
+            await handleCommandInteraction(interaction);
+          } catch (error) {
+            logError(`Error handling slash command: ${error}`);
           }
         }
       });
@@ -72,6 +81,9 @@ export class DiscordProvider {
       }
 
       this.channel = channel as TextChannel;
+
+      // Register slash commands
+      await registerCommands(this.client, this.config.guildId);
     } catch (error) {
       throw new ChatConnectionError(error instanceof Error ? error : undefined);
     }
@@ -170,21 +182,6 @@ export class DiscordProvider {
     const prompt = this.formatResponseMessage(message.content);
 
     logDebug(`[Discord] Received message: ${prompt}`);
-
-    // Handle workspace commands (!workspace ...)
-    if (prompt.startsWith("!workspace")) {
-      try {
-        const response = await handleWorkspaceCommand(prompt);
-        await this.sendEmbedMessage(response, false);
-      } catch (error) {
-        logError(`Error handling workspace command: ${error}`);
-        await this.sendEmbedMessage(
-          "Error processing workspace command.",
-          true,
-        );
-      }
-      return;
-    }
 
     const state = this.claudeCode.getState();
 
