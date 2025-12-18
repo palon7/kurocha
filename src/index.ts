@@ -61,6 +61,7 @@ async function main() {
     {
       apiKey: config.discordToken,
       channelId: config.discordChannelId,
+      guildId: config.discordGuildId,
     },
     claude,
   );
