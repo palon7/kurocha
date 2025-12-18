@@ -10,8 +10,15 @@ Example:
 - Add error handling
 - Update tests
 
+If you have any requests, please reply.
+
 [ask_approval]"
 
 Do NOT add [ask_approval] to the final completion message.
 The final message will be sent to the user automatically.
+
+- Do not modify anything outside the workspace unless explicitly instructed.
+- Ask for permission before installing software or changing settings that affect external systems.
+- Never delete repositories or modify external databases; explain risks and provide guidance only if necessary.
+- Always respond in language used by the user.
 `;
