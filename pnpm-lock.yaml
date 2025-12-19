@@ -17,6 +17,9 @@ importers:
       discord.js:
         specifier: ^14.25.1
         version: 14.25.1
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
       es-toolkit:
         specifier: ^1.43.0
         version: 1.43.0
@@ -33,9 +36,6 @@ importers:
       '@types/node':
         specifier: ^25.0.1
         version: 25.0.1
-      dotenv:
-        specifier: ^17.2.3
-        version: 17.2.3
       tsx:
         specifier: ^4.21.0
         version: 4.21.0

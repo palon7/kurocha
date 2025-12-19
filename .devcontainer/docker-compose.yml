@@ -8,8 +8,6 @@ services:
       - claude-config:/home/node/.claude
       - dot-config:/home/node/.config
     command: sleep infinity
-    environment:
-      - MCP_CHAT_HUMAN_ENTRYPOINT=/opt/mcp-chat-human/build/index.js
 volumes:
   claude-config:
   dot-config:
