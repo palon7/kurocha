@@ -56,7 +56,16 @@ WORKSPACE_ROOT=/workdir
 
 #### Using Docker
 
-TBD
+```bash
+# Copy env file and edit
+cp .env.example .env
+docker compose build
+
+# login github cli (if needed)
+docker compose run --rm kurocha gh auth login
+
+docker compose up -d
+```
 
 #### Using Devcontainer
 ```bash
@@ -73,7 +82,7 @@ pnpm start
 
 Claude CLI requires authentication. There are two methods:
 
-### Method 1: API Key (Recommended for Docker)
+### Method 1: API Key
 
 Set `ANTHROPIC_API_KEY` in your `.env` file. This is the simplest method for containerized environments.
 
@@ -87,12 +96,9 @@ If you have a Claude Pro or Max subscription, you can authenticate interactively
 
 ```bash
 # Start a shell in the running container
-docker compose exec kurocha sh
+docker compose run --rm kurocha claude
 
-# Run and authenticate Claude CLI
-claude
-
-# Credentials will be stored in /home/claude/.claude/ (persisted in claude-config volume)
+# Ctrl-C to exit after authentication
 ```
 
 ## License

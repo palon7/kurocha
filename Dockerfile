@@ -1,7 +1,9 @@
 # Base stage with pnpm setup
-FROM node:24-slim AS base
+ARG NODE_VERSION=24
 
-ARG PNPM_VERSION="pnpm@10.25.0"
+FROM node:${NODE_VERSION}-slim AS base
+
+ARG PNPM_VERSION=10.25.0
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
@@ -28,21 +30,35 @@ COPY src ./src
 # Build the application
 RUN pnpm run build
 
-WORKDIR /mcp-build
-
-# Clone and build mcp-chat-human
-RUN git clone https://github.com/palon7/mcp-chat-human.git . && \
-    pnpm install --frozen-lockfile && \
-    pnpm run build
-
 #
 # Production runner
 #
 
 FROM base AS production
 
+ARG CLAUDE_CODE_VERSION=latest
+ARG GITHUB_CLI_VERSION=2.67.0
+
+# Install GitHub CLI
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    less \
+    git \
+    procps \
+    sudo \
+    man-db \
+    unzip \
+    gnupg2 \
+    dnsutils \
+    jq \
+    curl && \
+    curl -fsSL https://github.com/cli/cli/releases/download/v${GITHUB_CLI_VERSION}/gh_${GITHUB_CLI_VERSION}_linux_amd64.deb -o /tmp/gh.deb && \
+    dpkg -i /tmp/gh.deb && \
+    rm /tmp/gh.deb && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Install Claude CLI globally
-RUN npm install -g @anthropic-ai/claude-code
+RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 
 WORKDIR /app
 
@@ -53,10 +69,6 @@ RUN pnpm install --prod  --frozen-lockfile
 COPY --from=builder /app/build ./build
 
 # Copy mcp-chat-human from mcp-builder stage
-RUN mkdir -p /opt/mcp-chat-human
-COPY --from=builder /mcp-build/build /opt/mcp-chat-human/build
-COPY --from=builder /mcp-build/package.json /opt/mcp-chat-human/
-COPY --from=builder /mcp-build/node_modules /opt/mcp-chat-human/node_modules
 
 RUN groupadd -r claude && useradd -r -g claude -m -d /home/claude claude
 
@@ -65,6 +77,7 @@ RUN mkdir -p /workdir && chown -R claude:claude /workdir
 
 # Create .claude directory for Claude CLI settings and authentication
 RUN mkdir -p /home/claude/.claude && chown -R claude:claude /home/claude/.claude
+RUN mkdir -p /home/claude/.config && chown -R claude:claude /home/claude/.config
 
 # Switch to non-root user
 USER claude
@@ -73,7 +86,6 @@ USER claude
 ENV NODE_ENV=production
 ENV CLAUDE_WORKING_DIR=/workdir
 ENV CLAUDE_SKIP_PERMISSIONS=true
-ENV MCP_CHAT_HUMAN_ENTRYPOINT=/opt/mcp-chat-human/build/index.js
 
 # Start the application
 CMD ["node", "/app/build/index.js"]
